@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<commands>
+	<command>
+		<name>one</name>
+		<response>ONE</response>
+	</command>
+	<command>
+		<name>two</name>
+		<response>TWO</response>
+	</command>
+	<command>
+		<name>three</name>
+		<response>THREE</response>
+	</command>
+	<command>
+		<name>four</name>
+		<response>FOUR</response>
+	</command>
+	<command>
+		<name>five</name>
+		<response>FIVE</response>
+	</command>
+</commands>
