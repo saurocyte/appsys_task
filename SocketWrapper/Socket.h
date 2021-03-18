@@ -1,8 +1,11 @@
 #pragma once
 
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+
 #include <vector>
 #include <functional>
 #include <WinSock2.h>
+#include <string>
 
 typedef SOCKET;
 
@@ -31,7 +34,7 @@ struct Connection {
 
 struct Request {
 	std::string command;
-	SOCKET *initiator;
+	SOCKET initiator;
 
 	Request(std::string _command, SOCKET _initiator) :
 		command(_command),
@@ -41,57 +44,50 @@ struct Request {
 
 struct Response {
 	std::string response;
-	SOCKET *destination;
+	SOCKET destination;
 
-	Response(std::string _response, SOCKET* _destination) :
+	Response(std::string _response, SOCKET _destination) :
 		response(_response),
 		destination(_destination) 
 	{};
 };
 
-enum SocketType { LISTENING, ESTABILISHED };
+class ListeningSocket {
+public:
+	ListeningSocket(int MAX_CONNECTIONS, PCSTR port);
+
+	std::string ip();
+
+	SOCKET s;
+private:
+	int initialize();
+
+	PCSTR port;
+};
 
 
 class ConnectionPool {
 typedef std::vector<Connection> List;
 
 public:
+	ConnectionPool(unsigned int MAX_CONNECTIONS);
+
 	bool is_ready();
 	void reset();
 	void accept();
 	bool pending_conn_present();
-	void receive();
 	void receive(std::function<void(char*, SOCKET)> dataHandler);
+	std::string ip();
 
 private:
+	const PCSTR PORT = "27015";
+
 	bool is_readable(SOCKET socket);
 
 	List clients;
-	Socket listening_socket;
+	ListeningSocket listening_socket;
 
 	fd_set readfds;
 	fd_set writefds;
 	fd_set exceptfds;
 };
-
-class Socket {
-public:
-	Socket(SocketType t, int MAX_CONNECTIONS);
-	Socket(SOCKET _s) : s(_s) {};
-
-	bool is_readable();
-	bool is_writeable();
-	bool is_error();
-
-	Socket accept_connection();
-
-	std::string ip();
-
-private:
-	int initialize_socket();
-	void reset_fdsets();
-
-	SOCKET s;
-	PCSTR port;
-};
-

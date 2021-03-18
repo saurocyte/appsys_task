@@ -7,7 +7,14 @@
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 
-int Socket::initialize_socket() {
+ConnectionPool::ConnectionPool(unsigned int MAX_CONNECTIONS) 
+: listening_socket(MAX_CONNECTIONS, PORT) {}
+
+std::string ConnectionPool::ip() {
+	return listening_socket.ip();
+}
+
+int ListeningSocket::initialize() {
 	WSADATA wsaData;
 	int iResult;
 
@@ -49,19 +56,13 @@ int Socket::initialize_socket() {
 	freeaddrinfo(result);
 }
 
-Socket::Socket(SocketType t, int MAX_CONNECTIONS=10) {
-	switch (t) {
-	case LISTENING:
-		initialize_socket();
-		if (listen(s, MAX_CONNECTIONS) == SOCKET_ERROR) {
-			std::cerr << "listen failed with error: " << WSAGetLastError() << std::endl;
-			WSACleanup();
-			return;
-		}
-		reset_fdsets();
-		break;
-	case ESTABILISHED:
-		break;
+ListeningSocket::ListeningSocket(int MAX_CONNECTIONS=10, PCSTR _port="") 
+: port(_port) {
+	initialize();
+	if (listen(s, MAX_CONNECTIONS) == SOCKET_ERROR) {
+		std::cerr << "listen failed with error: " << WSAGetLastError() << std::endl;
+		WSACleanup();
+		return;
 	}
 }
 
@@ -70,13 +71,13 @@ bool ConnectionPool::is_ready() {
 }
 
 bool ConnectionPool::pending_conn_present() {
-	return FD_ISSET(listening_socket, &readfds);
+	return FD_ISSET(listening_socket.s, &readfds);
 }
 
 void ConnectionPool::accept() {
 	if (pending_conn_present()) {
 		SOCKET client_socket;
-		client_socket = ::accept(listening_socket, NULL, NULL);
+		client_socket = ::accept(listening_socket.s, NULL, NULL);
 		if (client_socket == INVALID_SOCKET) {
 			std::cerr << "accept() failed with error: " << WSAGetLastError() << std::endl;
 			WSACleanup();
@@ -141,41 +142,10 @@ void ConnectionPool::reset() {
 	}
 }
 
-bool Socket::is_readable() {
-	return FD_ISSET(s, &readfds);
-}
-
-bool Socket::is_writeable() {
-	return FD_ISSET(s, &writefds);
-}
-
-bool Socket::is_error() {
-	return FD_ISSET(s, &exceptfds);
-}
-
-Socket Socket::accept_connection() {
-	Socket new_s = Socket(accept(s, NULL, NULL));
-	if (new_s == INVALID_SOCKET) {
-		std::cerr << "accept() failed with error: " << WSAGetLastError() << std::endl;
-		WSACleanup();
-		return new_s;
-	}
-	return new_s;
-}
-
-void Socket::reset_fdsets() {
-	FD_ZERO(&readfds);
-	FD_ZERO(&writefds);
-	FD_ZERO(&exceptfds);
-	FD_SET(s, &readfds);
-	FD_SET(s, &writefds);
-	FD_SET(s, &exceptfds);
-}
-
-std::string get_ip_from_socket(const SOCKET socket) {
+std::string ListeningSocket::ip() {
 	sockaddr client_info = { 0 };
 	int addrsize = sizeof(client_info);
-	getsockname(socket, &client_info, &addrsize);
+	getsockname(s, &client_info, &addrsize);
 	char* ip = inet_ntoa(((sockaddr_in *) &client_info)->sin_addr);
 	return std::string(ip);
 }
