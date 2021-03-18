@@ -8,9 +8,6 @@
 #include <vector>
 #include <map>
 #include <iterator>
-#include <chrono>
-#include <ctime>
-#include <iomanip>
 
 #include <WinSock2.h>
 #include <ws2tcpip.h>
@@ -20,9 +17,9 @@
 #include "../tinyxml2.h"
 
 #include "SocketWrapper/Socket.h"
+#include "timestamp/Timestamp.h"
 
 #pragma comment(lib, "ws2_32.lib")
-
 
 #define PORT "27015"
 #define MAX_CONNECTIONS 10
@@ -39,11 +36,6 @@ typedef int Int32;
 class Server {
 
 };
-
-auto timestamp() {
-	time_t now = time(nullptr) ;
-	return std::put_time(localtime(&now), "%T");
-}
 
 std::string parse_buffer(char* buffer) {
 	Int16 name_size = buffer[0];
@@ -70,7 +62,7 @@ void worker_thread(RequestQueue &qr, ResponseQueue &qp) {
 		while (!qp.empty()) {
 			Response r = qp.pop();
 			int iResult = send(r.destination, r.response.c_str(), sizeof(r.response), 0);
-			std::cout << timestamp() << " sent \"" 
+			std::cout << Timestamp::timestamp() << " sent \"" 
 					  << r.response << "\" to " << r.destination << std::endl;
 			if (iResult == SOCKET_ERROR) {
 				std::cerr << "send failed with error: " << WSAGetLastError() << std::endl;
