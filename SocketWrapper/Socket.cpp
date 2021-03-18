@@ -6,6 +6,7 @@
 #include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include "timestamp/timestamp.h"
 
 ConnectionPool::ConnectionPool(unsigned int MAX_CONNECTIONS) 
 : listening_socket(MAX_CONNECTIONS, PORT) {}
@@ -98,22 +99,20 @@ void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
 		if (is_readable(it->socket)) {
 			int iResult = it->recieve();
 
-			dataHandler(it->buffer + it->chars_in_buffer, it->socket);
-			it->resetBuffer();
-
 			if (iResult == 0) {
-//				std::cout << timestamp() << " socket " << it->socket << " was closed by client" << std::endl;
+				std::cout << Timestamp::timestamp() << " socket " << it->socket 
+					<< " was closed by client" << std::endl;
 				ok = false;
 			}
 			if (iResult == -1) {
-//				std::cout << timestamp() << " something happenned to the socket "
-//					<< it->socket << std::endl;
+				std::cout << Timestamp::timestamp() << " something happenned to the socket "
+					<< it->socket << std::endl;
 				ok = iResult == WSAEWOULDBLOCK;
 			}
 			else {
-//				std::cout << timestamp() << " recieved \"" << command_name
-//					<< "\" from " << it->socket << std::endl;
+				dataHandler(it->buffer + it->chars_in_buffer, it->socket);
 				it->chars_in_buffer += iResult;
+				it->resetBuffer();
 			}
 
 			FD_CLR(it->socket, &readfds);

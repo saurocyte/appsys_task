@@ -153,6 +153,9 @@
     <ProjectReference Include="..\SocketWrapper\SocketWrapper.vcxproj">
       <Project>{90564313-d1a9-4fc4-b5d4-670780d6def0}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\timestamp\timestamp.vcxproj">
+      <Project>{5d61f30d-a0b3-42ec-a4cf-93502a543002}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
