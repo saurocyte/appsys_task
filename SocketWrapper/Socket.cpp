@@ -65,8 +65,80 @@ Socket::Socket(SocketType t, int MAX_CONNECTIONS=10) {
 	}
 }
 
-bool Socket::is_ready() {
+bool ConnectionPool::is_ready() {
 	return (select(NULL, &readfds, &writefds, &exceptfds, 0) > 0);
+}
+
+bool ConnectionPool::pending_conn_present() {
+	return FD_ISSET(listening_socket, &readfds);
+}
+
+void ConnectionPool::accept() {
+	if (pending_conn_present()) {
+		SOCKET client_socket;
+		client_socket = ::accept(listening_socket, NULL, NULL);
+		if (client_socket == INVALID_SOCKET) {
+			std::cerr << "accept() failed with error: " << WSAGetLastError() << std::endl;
+			WSACleanup();
+			return;
+		}
+		clients.push_back(Connection(client_socket));
+	}
+}
+
+bool ConnectionPool::is_readable(SOCKET socket) {
+	 return FD_ISSET(&socket, &readfds);
+}
+
+void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
+	List::iterator it = clients.begin();
+	while (it != clients.end()) {
+		bool ok = true;
+		if (is_readable(it->socket)) {
+			int iResult = it->recieve();
+
+			dataHandler(it->buffer + it->chars_in_buffer, it->socket);
+			it->resetBuffer();
+
+			if (iResult == 0) {
+//				std::cout << timestamp() << " socket " << it->socket << " was closed by client" << std::endl;
+				ok = false;
+			}
+			if (iResult == -1) {
+//				std::cout << timestamp() << " something happenned to the socket "
+//					<< it->socket << std::endl;
+				ok = iResult == WSAEWOULDBLOCK;
+			}
+			else {
+//				std::cout << timestamp() << " recieved \"" << command_name
+//					<< "\" from " << it->socket << std::endl;
+				it->chars_in_buffer += iResult;
+			}
+
+			FD_CLR(it->socket, &readfds);
+		}
+
+		if (FD_ISSET(it->socket, &writefds)) {}
+
+		if (!ok) {
+//			std::cout << timestamp() << " connection closed (" << it->socket << ")" << std::endl;
+			closesocket(it->socket);
+			clients.erase(it);
+			it = clients.begin();
+		}
+		else {
+			++it;
+		}
+	}
+}
+
+void ConnectionPool::reset() {
+	List::iterator it = clients.begin();
+	while (it != clients.end()) {
+		FD_SET(it->socket, &readfds);
+		FD_SET(it->socket, &writefds);
+		++it;
+	}
 }
 
 bool Socket::is_readable() {
@@ -107,4 +179,3 @@ std::string get_ip_from_socket(const SOCKET socket) {
 	char* ip = inet_ntoa(((sockaddr_in *) &client_info)->sin_addr);
 	return std::string(ip);
 }
-
