@@ -6,9 +6,8 @@
 
 class Timestamp {
 public:
-	inline auto timestamp() {
+	inline static auto timestamp() {
 		time_t now = time(nullptr) ;
 		return std::put_time(localtime(&now), "%T");
 	}
 };
-
