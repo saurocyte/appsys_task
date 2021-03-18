@@ -84,12 +84,13 @@ void ConnectionPool::accept() {
 			WSACleanup();
 			return;
 		}
+		std::cout << Timestamp::timestamp() << " new connection initiated (" << client_socket << ")" << std::endl;
 		clients.push_back(Connection(client_socket));
 	}
 }
 
 bool ConnectionPool::is_readable(SOCKET socket) {
-	 return FD_ISSET(&socket, &readfds);
+	 return FD_ISSET(socket, &readfds);
 }
 
 void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
@@ -121,7 +122,7 @@ void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
 		if (FD_ISSET(it->socket, &writefds)) {}
 
 		if (!ok) {
-//			std::cout << timestamp() << " connection closed (" << it->socket << ")" << std::endl;
+			std::cout << Timestamp::timestamp() << " connection closed (" << it->socket << ")" << std::endl;
 			closesocket(it->socket);
 			clients.erase(it);
 			it = clients.begin();
@@ -139,6 +140,7 @@ void ConnectionPool::reset() {
 		FD_SET(it->socket, &writefds);
 		++it;
 	}
+	FD_SET(listening_socket.s, &readfds);
 }
 
 std::string ListeningSocket::ip() {

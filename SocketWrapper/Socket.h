@@ -12,6 +12,8 @@ typedef SOCKET;
 struct Connection {
 	static const int BUFLEN = 512;
 
+	std::string parse_buffer(char* buffer);
+
 	SOCKET socket;
 	char buffer[BUFLEN];
 	u_int chars_in_buffer;
