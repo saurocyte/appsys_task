@@ -54,9 +54,9 @@ struct Response {
 	{};
 };
 
-class ListeningSocket {
+class ServerSocket {
 public:
-	ListeningSocket(int MAX_CONNECTIONS, PCSTR port);
+	ServerSocket(int MAX_CONNECTIONS, PCSTR port);
 
 	std::string ip();
 
@@ -67,6 +67,12 @@ private:
 	PCSTR port;
 };
 
+class ClientSocket {
+public:
+	ClientSocket(PCSTR addr, PCSTR port);
+
+	SOCKET s;
+};
 
 class ConnectionPool {
 typedef std::vector<Connection> List;
@@ -87,7 +93,7 @@ private:
 	bool is_readable(SOCKET socket);
 
 	List clients;
-	ListeningSocket listening_socket;
+	ServerSocket listening_socket;
 
 	fd_set readfds;
 	fd_set writefds;

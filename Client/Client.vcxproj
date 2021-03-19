@@ -79,6 +79,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
@@ -141,10 +142,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\tinyxml2.cpp" />
+    <ClCompile Include="Client.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="commands.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Client.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SocketWrapper\SocketWrapper.vcxproj">
+      <Project>{90564313-d1a9-4fc4-b5d4-670780d6def0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\timestamp\timestamp.vcxproj">
+      <Project>{5d61f30d-a0b3-42ec-a4cf-93502a543002}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
