@@ -3,16 +3,14 @@
 #include <WinSock2.h>
 #include <string>
 
-#include <SocketWrapper/Socket.h>
+#include "SocketWrapper/Socket.h"
+#include "SocketWrapper/MessageParser.h"
 
 typedef char Int8;
 typedef short int Int16;
 typedef int Int32;
 
 typedef std::vector<Command> CommandList;
-
-using namespace tinyxml2;
-
 
 class Client {
 public:

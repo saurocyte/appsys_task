@@ -21,6 +21,8 @@
 #include "timestamp/timestamp.h"
 #include "Client.h"
 
+using namespace tinyxml2;
+
 
 Client::Client(PCSTR addr, PCSTR port, const std::string _commands_path)
 : conn(addr, port), commands_path(_commands_path) {
@@ -40,10 +42,10 @@ void Client::run() {
     auto it = commands.begin();
 
     while (true) {
-        Int8* data = MessageParser::encode(*it);
+        std::vector<Int8> data = MessageParser::encode(*it);
 
         std::cout << Timestamp::timestamp() <<  " sending \"" << it->name << "\"" << std::endl;
-        int iResult = send(conn.s, data, 2 + it->name.length(), 0);
+        int iResult = send(conn.s, &data[0], data.size(), 0);
 		if (iResult == SOCKET_ERROR) {
 			std::cerr << "send failed with error: " << WSAGetLastError() << std::endl;
 			closesocket(conn.s);
@@ -54,8 +56,6 @@ void Client::run() {
         char buffer[512];
         iResult = recv(conn.s, buffer, sizeof(buffer), 0);
         std::cout << Timestamp::timestamp() << " got " << buffer << std::endl;
-
-        delete data;
 
         ++it;
         if (it == commands.end()) {

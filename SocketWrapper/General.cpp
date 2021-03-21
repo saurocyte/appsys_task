@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "General.h"
 #include <iostream>
 #include <WinSock2.h>

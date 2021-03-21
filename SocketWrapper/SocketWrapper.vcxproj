@@ -153,23 +153,20 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="exceptions.h" />
-    <ClInclude Include="framework.h" />
     <ClInclude Include="General.h" />
     <ClInclude Include="MessageParser.h" />
-    <ClInclude Include="pch.h" />
     <ClInclude Include="Socket.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="General.cpp" />
-    <ClCompile Include="MessageParser.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    <ClCompile Include="General.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Socket.cpp" />
-    <ClCompile Include="SocketWrapper.cpp" />
+    <ClCompile Include="MessageParser.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="Socket.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\timestamp\timestamp.vcxproj">

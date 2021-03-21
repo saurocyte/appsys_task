@@ -17,6 +17,6 @@ struct Command {
 class MessageParser {
 public:
 	static std::string decode(Connection::buffer_t buffer);
-	static Int8 *encode(Command cmd);
+	static std::vector<Int8> encode(Command cmd);
 };
 

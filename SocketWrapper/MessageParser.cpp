@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "MessageParser.h"
 #include <vector>
 
@@ -18,13 +17,13 @@ std::string MessageParser::decode(Connection::buffer_t buffer) {
 }
 
 
-Int8* MessageParser::encode(Command cmd) {
+std::vector<Int8> MessageParser::encode(Command cmd) {
 	Int16 name_size = cmd.name.length();
-	Int8 *data = new char[2 + name_size];
-	data[0] = (name_size >> 8) & 0xff;
-	data[1] = name_size & 0xff;
+	std::vector<Int8> data;
+	data.push_back((name_size >> 8) & 0xff);
+	data.push_back(name_size & 0xff);
 	for (auto i = 0; i < name_size; ++i) {
-		data[2 + i] = cmd.name[i];
+		data.push_back(cmd.name[i]);
 	}
 	return data;
 }
