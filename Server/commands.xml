@@ -6,6 +6,10 @@
 		<response>ONE</response>
 	</command>
 	<command>
+		<name>ğğğ</name>
+		<response>ĞĞĞ</response>
+	</command>
+	<command>
 		<name>two</name>
 		<response>TWO</response>
 	</command>
