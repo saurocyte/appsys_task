@@ -8,7 +8,7 @@
 #include "timestamp/timestamp.h"
 #include "General.h"
 
-int Connection::recieve() {
+int Connection::receive() {
 	int iResult = recv(socket, buffer.data(), BUFLEN, 0);
 	return iResult;
 }
@@ -109,7 +109,7 @@ void ConnectionPool::receive(std::function<void(Connection::buffer_t, SOCKET)> d
 	while (it != clients.end()) {
 		bool ok = true;
 		if (is_readable(it->socket)) {
-			int iResult = it->recieve();
+			int iResult = it->receive();
 
 			if (iResult == 0) {
 				std::cout << Timestamp::timestamp() << " socket " << it->socket 

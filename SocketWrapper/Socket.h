@@ -21,7 +21,7 @@ public:
 
 	buffer_t buffer;
 	
-	int recieve();
+	int receive();
 	void reset_buffer();
 
 	Connection(SOCKET _socket) : 
