@@ -53,7 +53,7 @@ class ServerSocket {
 public:
 	ServerSocket(int MAX_CONNECTIONS, PCSTR port);
 
-	std::string ip();
+	std::string ip() const;
 
 	SOCKET s;
 private:
@@ -80,7 +80,9 @@ public:
 	void accept();
 	bool pending_conn_present();
 	void receive(std::function<void(Connection::buffer_t, SOCKET)> dataHandler);
-	std::string ip();
+
+	std::string ip() const;
+	std::string port() const;
 
 private:
 	const PCSTR PORT = "27015";

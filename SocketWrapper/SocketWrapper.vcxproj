@@ -152,6 +152,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="exceptions.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="General.h" />
     <ClInclude Include="MessageParser.h" />

@@ -21,5 +21,7 @@ private:
 	RequestQueue qr;
 	ResponseQueue qp;
 
+	void respond();
+
 	static void worker_thread(RequestQueue &qr, ResponseQueue &qp);
 };

@@ -22,7 +22,8 @@ using namespace tinyxml2;
 void Server::worker_thread(RequestQueue &qr, ResponseQueue &qp) {
 	ConnectionPool connections(10);
 
-	// std::cout << timestamp() << " listening on " << listen_socket.ip() << ":" << PORT << std::endl;
+	std::cout << Timestamp::timestamp() << " listening on " 
+		<< connections.ip() << ":" << connections.port() << std::endl;
 
 	while (true) {
 		connections.reset();

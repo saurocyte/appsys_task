@@ -7,6 +7,7 @@
 #include <iphlpapi.h>
 #include "timestamp/timestamp.h"
 #include "General.h"
+#include "exceptions.h"
 
 int Connection::receive() {
 	int iResult = recv(socket, buffer.data(), BUFLEN, 0);
@@ -20,9 +21,14 @@ void Connection::reset_buffer() {
 ConnectionPool::ConnectionPool(unsigned int MAX_CONNECTIONS) 
 : listening_socket(MAX_CONNECTIONS, PORT) {}
 
-std::string ConnectionPool::ip() {
+std::string ConnectionPool::ip() const {
 	return listening_socket.ip();
 }
+
+std::string ConnectionPool::port() const {
+	return PORT;
+}
+
 
 ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
     General::initialize_winsock();
@@ -32,14 +38,11 @@ ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
         // Create a SOCKET for connecting to server
         s = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
         if (s == INVALID_SOCKET) {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
-            WSACleanup();
-            return;
+            throw SocketError("socket failed with error: " + WSAGetLastError());
         }
 
         // Connect to server.
-        int iResult = connect(s, ptr->ai_addr, (int)ptr->ai_addrlen);
-        if (iResult == SOCKET_ERROR) {
+        if (connect(s, ptr->ai_addr, (int)ptr->ai_addrlen) == SOCKET_ERROR) {
             closesocket(s);
             s = INVALID_SOCKET;
             continue;
@@ -48,9 +51,7 @@ ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
     }
 
     if (s == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
-        WSACleanup();
-        return;
+		throw SocketError("unable to connect to the server!");
     }
 }
 
@@ -62,19 +63,15 @@ ServerSocket::ServerSocket(int MAX_CONNECTIONS=10, PCSTR _port="")
 
 	s = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (s == INVALID_SOCKET) {
-		std::cerr << "error at socket(): " << WSAGetLastError() << std::endl;
-		WSACleanup();
+		throw SocketError("error at socket(): " + WSAGetLastError());
 	}
 
-	int iResult = bind(s, result->ai_addr, (int)result->ai_addrlen);
-	if (iResult == SOCKET_ERROR) {
-		std::cerr << "bind() failed with error: " << WSAGetLastError() << std::endl;
-		WSACleanup();
+	if (bind(s, result->ai_addr, (int)result->ai_addrlen) == SOCKET_ERROR) {
+		throw SocketError("bind() failed with error: " + WSAGetLastError());
 	}
 
 	if (listen(s, MAX_CONNECTIONS) == SOCKET_ERROR) {
-		std::cerr << "listen failed with error: " << WSAGetLastError() << std::endl;
-		WSACleanup();
+		throw SocketError("listen failed with error: " + WSAGetLastError());
 	}
 }
 
@@ -153,7 +150,7 @@ void ConnectionPool::reset() {
 	FD_SET(listening_socket.s, &readfds);
 }
 
-std::string ServerSocket::ip() {
+std::string ServerSocket::ip() const {
 	sockaddr client_info = { 0 };
 	int addrsize = sizeof(client_info);
 	getsockname(s, &client_info, &addrsize);
