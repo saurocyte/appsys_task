@@ -11,6 +11,7 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <string>
 
 #include <WinSock2.h>
 #include <ws2tcpip.h>
@@ -18,130 +19,67 @@
 
 #include "../tinyxml2.h"
 
-#pragma comment (lib, "ws2_32.lib")
+#include "SocketWrapper/Socket.h"
+#include "SocketWrapper/MessageParser.h"
+#include "timestamp/timestamp.h"
 
-#define BUFLEN 512
-#define PORT "27015"
+#pragma comment (lib, "ws2_32.lib")
 
 typedef char Int8;
 typedef short int Int16;
 typedef int Int32;
 
-struct Command {
-    const char *name;
-
-    Command(const char* _name) : name(_name) {};
-};
-
 typedef std::vector<Command> CommandList;
-
-auto timestamp() {
-	time_t now = time(nullptr) ;
-	return std::put_time(localtime(&now), "%T");
-}
 
 using namespace tinyxml2;
 
-int main(int argc, char **argv) 
-{
-    WSADATA wsaData;
-    SOCKET ConnectSocket = INVALID_SOCKET;
-    struct addrinfo *result = NULL, *ptr = NULL, hints;
-    char recvbuf[BUFLEN];
-    int iResult;
-    int recvbuflen = BUFLEN;
+class Client {
+public:
+    Client(PCSTR addr, PCSTR port, const std::string _commands_path);
+    void run();
+private:
+    void parse_commands();
 
-    // Validate the parameters
-    if (argc != 2) {
-        printf("usage: %s server-name\n", argv[0]);
-        return 1;
-    }
-
-    // Initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != 0) {
-        printf("WSAStartup failed with error: %d\n", iResult);
-        return 1;
-    }
-
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-
-    // Resolve the server address and port
-    iResult = getaddrinfo(argv[1], PORT, &hints, &result);
-    if ( iResult != 0 ) {
-        printf("getaddrinfo failed with error: %d\n", iResult);
-        WSACleanup();
-        return 1;
-    }
-
-    // Attempt to connect to an address until one succeeds
-    for(ptr=result; ptr != NULL; ptr=ptr->ai_next) {
-
-        // Create a SOCKET for connecting to server
-        ConnectSocket = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
-        if (ConnectSocket == INVALID_SOCKET) {
-            printf("socket failed with error: %ld\n", WSAGetLastError());
-            WSACleanup();
-            return 1;
-        }
-
-        // Connect to server.
-        iResult = connect(ConnectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
-        if (iResult == SOCKET_ERROR) {
-            closesocket(ConnectSocket);
-            ConnectSocket = INVALID_SOCKET;
-            continue;
-        }
-        break;
-    }
-
-    freeaddrinfo(result);
-
-    if (ConnectSocket == INVALID_SOCKET) {
-        printf("Unable to connect to server!\n");
-        WSACleanup();
-        return 1;
-    }
-
+    std::string commands_path;
     CommandList commands;
-	tinyxml2::XMLDocument doc;
 
-	doc.LoadFile("commands.xml");
+    ClientSocket conn;
+    char recvbuf[512];
+    int recvbuflen = 512;
+};
+
+Client::Client(PCSTR addr, PCSTR port, const std::string _commands_path)
+: conn(addr, port), commands_path(_commands_path) {
+	tinyxml2::XMLDocument doc;
+    doc.LoadFile("commands.xml");
 
     for (const XMLNode *node = doc.FirstChildElement("commands")->FirstChild(); 
         node; 
         node = node->NextSiblingElement()) {
-        const char* name = node->ToElement()->GetText();
+        std::string name = std::string(node->ToElement()->GetText());
         
         commands.push_back(Command(name));
     }
+}
 
+void Client::run() {
     auto it = commands.begin();
 
     while (true) {
-        Int16 name_size = strlen(it->name);
-        Int8 *data = new char[2 + name_size];
-        data[0] = (name_size >> 8) & 0xff;
-        data[1] = name_size & 0xff;
-        for (auto i = 0; i < name_size; ++i) {
-            data[2 + i] = it->name[i];
-        }
+        Int8* data = MessageParser::encode(*it);
 
-        std::cout << timestamp() <<  " sending \"" << it->name << "\"" << std::endl;
-        iResult = send(ConnectSocket, data, 2 + name_size, 0);
+        std::cout << Timestamp::timestamp() <<  " sending \"" << it->name << "\"" << std::endl;
+        int iResult = send(conn.s, data, 2 + it->name.length(), 0);
 		if (iResult == SOCKET_ERROR) {
 			std::cerr << "send failed with error: " << WSAGetLastError() << std::endl;
-			closesocket(ConnectSocket);
+			closesocket(conn.s);
 			WSACleanup();
-			return 1;
+			return;
 		}
 
         char buffer[512];
-        iResult = recv(ConnectSocket, buffer, sizeof(buffer), 0);
-        std::cout << timestamp() << " got " << buffer << std::endl;
+        iResult = recv(conn.s, buffer, sizeof(buffer), 0);
+        std::cout << Timestamp::timestamp() << " got " << buffer << std::endl;
 
         delete data;
 
@@ -155,31 +93,29 @@ int main(int argc, char **argv)
     }
 
     // shutdown the connection since no more data will be sent
-    iResult = shutdown(ConnectSocket, SD_SEND);
+    int iResult = shutdown(conn.s, SD_SEND);
     if (iResult == SOCKET_ERROR) {
         printf("shutdown failed with error: %d\n", WSAGetLastError());
-        closesocket(ConnectSocket);
+        closesocket(conn.s);
         WSACleanup();
-        return 1;
+        return;
     }
 
-    // Receive until the peer closes the connection
-    do {
-        iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        if ( iResult > 0 )
-            printf("Bytes received: %d\n", iResult);
-        else if ( iResult == 0 )
-            printf("Connection closed\n");
-        else
-            printf("recv failed with error: %d\n", WSAGetLastError());
-
-    } while( iResult > 0 );
-
     // cleanup
-    closesocket(ConnectSocket);
+    closesocket(conn.s);
     WSACleanup();
+}
 
-    while (true) {};
+int main(int argc, char **argv) 
+{
+    if (argc != 2) {
+        printf("usage: %s server-name\n", argv[0]);
+        return 1;
+    }
+    
+    Client client(argv[1], "27015", "commands.xml");
+
+    client.run();
     
     return 0;
 }

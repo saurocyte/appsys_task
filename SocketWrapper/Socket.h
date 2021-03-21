@@ -6,32 +6,27 @@
 #include <functional>
 #include <WinSock2.h>
 #include <string>
+#include <array>
 
 typedef SOCKET;
 
-struct Connection {
+class Connection {
+private:
 	static const int BUFLEN = 512;
 
-	std::string parse_buffer(char* buffer);
+public:
+	typedef std::array<char, BUFLEN> buffer_t;
 
 	SOCKET socket;
-	char buffer[BUFLEN];
-	u_int chars_in_buffer;
 
-	int recieve() {
-		int iResult = recv(socket, buffer + chars_in_buffer, BUFLEN - chars_in_buffer, 0);
-		return iResult;
-	}
-
-	void resetBuffer() {
-		buffer[0] = '\0';
-		chars_in_buffer = 0;
-	}
+	buffer_t buffer;
+	
+	int recieve();
+	void reset_buffer();
 
 	Connection(SOCKET _socket) : 
 		socket(_socket),
-		buffer{ 0 },
-		chars_in_buffer(0) {};
+		buffer{ 0 } {};
 };
 
 struct Request {
@@ -54,9 +49,9 @@ struct Response {
 	{};
 };
 
-class ListeningSocket {
+class ServerSocket {
 public:
-	ListeningSocket(int MAX_CONNECTIONS, PCSTR port);
+	ServerSocket(int MAX_CONNECTIONS, PCSTR port);
 
 	std::string ip();
 
@@ -67,6 +62,12 @@ private:
 	PCSTR port;
 };
 
+class ClientSocket {
+public:
+	ClientSocket(PCSTR addr, PCSTR port);
+
+	SOCKET s;
+};
 
 class ConnectionPool {
 typedef std::vector<Connection> List;
@@ -78,7 +79,7 @@ public:
 	void reset();
 	void accept();
 	bool pending_conn_present();
-	void receive(std::function<void(char*, SOCKET)> dataHandler);
+	void receive(std::function<void(Connection::buffer_t, SOCKET)> dataHandler);
 	std::string ip();
 
 private:
@@ -87,7 +88,7 @@ private:
 	bool is_readable(SOCKET socket);
 
 	List clients;
-	ListeningSocket listening_socket;
+	ServerSocket listening_socket;
 
 	fd_set readfds;
 	fd_set writefds;

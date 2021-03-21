@@ -4,6 +4,10 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31019.35
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{6FE8EC7F-0CDE-4EDE-AF0E-43D2B563C39D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5D61F30D-A0B3-42EC-A4CF-93502A543002} = {5D61F30D-A0B3-42EC-A4CF-93502A543002}
+		{90564313-D1A9-4FC4-B5D4-670780D6DEF0} = {90564313-D1A9-4FC4-B5D4-670780D6DEF0}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "Server\Server.vcxproj", "{571C5FE9-57E4-4EC0-9E68-12F8BE0CD7BA}"
 	ProjectSection(ProjectDependencies) = postProject

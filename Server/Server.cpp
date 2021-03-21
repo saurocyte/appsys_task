@@ -43,7 +43,7 @@ void Server::worker_thread(RequestQueue &qr, ResponseQueue &qp) {
 		// Something happenned
 		if (connections.is_ready()) {
 			connections.accept();
-			connections.receive([&](char* buffer, SOCKET sender) {
+			connections.receive([&](Connection::buffer_t buffer, SOCKET sender) {
 				std::string command_name = MessageParser::decode(buffer);
 				qr.push(Request(command_name, sender));
 			});

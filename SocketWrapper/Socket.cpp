@@ -3,10 +3,19 @@
 #include <string>;
 #include <WinSock2.h>
 #include <iostream>
-#include <WinSock2.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include "timestamp/timestamp.h"
+#include "General.h"
+
+int Connection::recieve() {
+	int iResult = recv(socket, buffer.data(), BUFLEN, 0);
+	return iResult;
+}
+
+void Connection::reset_buffer() {
+	buffer[0] = '\0';
+}
 
 ConnectionPool::ConnectionPool(unsigned int MAX_CONNECTIONS) 
 : listening_socket(MAX_CONNECTIONS, PORT) {}
@@ -15,55 +24,57 @@ std::string ConnectionPool::ip() {
 	return listening_socket.ip();
 }
 
-int ListeningSocket::initialize() {
-	WSADATA wsaData;
-	int iResult;
+ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
+    General::initialize_winsock();
 
-	iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (iResult != 0) {
-		std::cerr << "WSAStartup failed: " << iResult << std::endl;
-		return -1;
-	}
+    // Attempt to connect to an address until one succeeds
+    for(addr_ptr ptr = General::resolve(port, addr); ptr != NULL; ptr.reset(ptr->ai_next)) {
+        // Create a SOCKET for connecting to server
+        s = socket(ptr->ai_family, ptr->ai_socktype, ptr->ai_protocol);
+        if (s == INVALID_SOCKET) {
+            printf("socket failed with error: %ld\n", WSAGetLastError());
+            WSACleanup();
+            return;
+        }
 
-	addrinfo* result = nullptr, * ptr = nullptr, hints;
+        // Connect to server.
+        int iResult = connect(s, ptr->ai_addr, (int)ptr->ai_addrlen);
+        if (iResult == SOCKET_ERROR) {
+            closesocket(s);
+            s = INVALID_SOCKET;
+            continue;
+        }
+        break;
+    }
 
-	ZeroMemory(&hints, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_protocol = IPPROTO_TCP;
-	hints.ai_flags = AI_PASSIVE;
+    if (s == INVALID_SOCKET) {
+        printf("Unable to connect to server!\n");
+        WSACleanup();
+        return;
+    }
+}
 
-	iResult = getaddrinfo(NULL, port, &hints, &result);
-	if (iResult != 0) {
-		std::cerr << "getaddrinfo failed: " << iResult << std::endl;
-		WSACleanup();
-		return -1;
-	}
+ServerSocket::ServerSocket(int MAX_CONNECTIONS=10, PCSTR _port="") 
+: port(_port) {
+	General::initialize_winsock();
+
+	addr_ptr result = General::resolve(port, NULL);
 
 	s = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (s == INVALID_SOCKET) {
 		std::cerr << "error at socket(): " << WSAGetLastError() << std::endl;
 		WSACleanup();
-		return -1;
 	}
 
-	iResult = bind(s, result->ai_addr, (int)result->ai_addrlen);
+	int iResult = bind(s, result->ai_addr, (int)result->ai_addrlen);
 	if (iResult == SOCKET_ERROR) {
 		std::cerr << "bind() failed with error: " << WSAGetLastError() << std::endl;
 		WSACleanup();
-		return -1;
 	}
 
-	freeaddrinfo(result);
-}
-
-ListeningSocket::ListeningSocket(int MAX_CONNECTIONS=10, PCSTR _port="") 
-: port(_port) {
-	initialize();
 	if (listen(s, MAX_CONNECTIONS) == SOCKET_ERROR) {
 		std::cerr << "listen failed with error: " << WSAGetLastError() << std::endl;
 		WSACleanup();
-		return;
 	}
 }
 
@@ -93,7 +104,7 @@ bool ConnectionPool::is_readable(SOCKET socket) {
 	 return FD_ISSET(socket, &readfds);
 }
 
-void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
+void ConnectionPool::receive(std::function<void(Connection::buffer_t, SOCKET)> dataHandler) {
 	List::iterator it = clients.begin();
 	while (it != clients.end()) {
 		bool ok = true;
@@ -111,9 +122,8 @@ void ConnectionPool::receive(std::function<void(char*, SOCKET)> dataHandler) {
 				ok = iResult == WSAEWOULDBLOCK;
 			}
 			else {
-				dataHandler(it->buffer + it->chars_in_buffer, it->socket);
-				it->chars_in_buffer += iResult;
-				it->resetBuffer();
+				dataHandler(it->buffer, it->socket);
+				it->reset_buffer();
 			}
 
 			FD_CLR(it->socket, &readfds);
@@ -143,10 +153,10 @@ void ConnectionPool::reset() {
 	FD_SET(listening_socket.s, &readfds);
 }
 
-std::string ListeningSocket::ip() {
+std::string ServerSocket::ip() {
 	sockaddr client_info = { 0 };
 	int addrsize = sizeof(client_info);
 	getsockname(s, &client_info, &addrsize);
-	char* ip = inet_ntoa(((sockaddr_in *) &client_info)->sin_addr);
+	std::string ip = std::string(inet_ntoa(((sockaddr_in *) &client_info)->sin_addr));
 	return std::string(ip);
 }

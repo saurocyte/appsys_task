@@ -1,9 +1,10 @@
 #include "pch.h"
 #include "MessageParser.h"
+#include <vector>
 
-typedef short int Int16;
+Command::Command(std::string _name) : name(_name) {};
 
-std::string MessageParser::decode(char* buffer) {
+std::string MessageParser::decode(Connection::buffer_t buffer) {
 	Int16 name_size = buffer[0];
 	name_size = name_size << 8;
 	name_size |= buffer[1];
@@ -16,3 +17,14 @@ std::string MessageParser::decode(char* buffer) {
 	return command_name;
 }
 
+
+Int8* MessageParser::encode(Command cmd) {
+	Int16 name_size = cmd.name.length();
+	Int8 *data = new char[2 + name_size];
+	data[0] = (name_size >> 8) & 0xff;
+	data[1] = name_size & 0xff;
+	for (auto i = 0; i < name_size; ++i) {
+		data[2 + i] = cmd.name[i];
+	}
+	return data;
+}
