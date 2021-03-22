@@ -10,7 +10,7 @@ struct addrinfo;
 
 class General {
 public:
-	static int initialize_winsock();
+	static void initialize_winsock();
 	static addr_ptr resolve(std::string port, std::string addr);
 };
 

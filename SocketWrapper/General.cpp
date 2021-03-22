@@ -7,14 +7,12 @@
 #include <string>
 #include "exceptions.h";
 
-int General::initialize_winsock() {
+void General::initialize_winsock() {
 	WSADATA wsaData;
 	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
-		std::cerr << "WSAStartup failed: " << iResult << std::endl;
-		return -1;
+		throw SocketError("WinSock initialization failed");
 	}
-	return 0;
 }
 
 addr_ptr General::resolve(std::string port, std::string addr) {
