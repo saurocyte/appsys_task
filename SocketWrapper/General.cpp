@@ -4,6 +4,8 @@
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include <memory>
+#include <string>
+#include "exceptions.h";
 
 int General::initialize_winsock() {
 	WSADATA wsaData;
@@ -15,7 +17,7 @@ int General::initialize_winsock() {
 	return 0;
 }
 
-addr_ptr General::resolve(PCSTR port, PCSTR addr=NULL) {
+addr_ptr General::resolve(std::string port, std::string addr) {
 	addrinfo hints = { 0 };
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -23,11 +25,10 @@ addr_ptr General::resolve(PCSTR port, PCSTR addr=NULL) {
 	hints.ai_flags = AI_PASSIVE;
 
 	addrinfo* result = nullptr;
-	int iResult = getaddrinfo(addr, port, &hints, &result);
+	int iResult = getaddrinfo(addr != "" ? addr.c_str() : NULL, port.c_str(), &hints, &result);
 	addr_ptr u_result(result, &freeaddrinfo);
 	if (iResult != 0) {
-		std::cerr << "getaddrinfo failed: " << iResult << std::endl;
-		WSACleanup();
+		throw SocketError("getaddrinfo failed");
 	}
 
 	return u_result;

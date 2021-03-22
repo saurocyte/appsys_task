@@ -51,7 +51,7 @@ struct Response {
 
 class ServerSocket {
 public:
-	ServerSocket(int MAX_CONNECTIONS, PCSTR port);
+	ServerSocket(int MAX_CONNECTIONS, std::string port);
 
 	std::string ip() const;
 
@@ -59,12 +59,12 @@ public:
 private:
 	int initialize();
 
-	PCSTR port;
+	std::string port;
 };
 
 class ClientSocket {
 public:
-	ClientSocket(PCSTR addr, PCSTR port);
+	ClientSocket(std::string addr, std::string port);
 
 	SOCKET s;
 };
@@ -85,7 +85,7 @@ public:
 	std::string port() const;
 
 private:
-	const PCSTR PORT = "27015";
+	const std::string PORT = "27015";
 
 	bool is_readable(SOCKET socket);
 

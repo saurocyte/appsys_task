@@ -14,17 +14,13 @@ typedef std::vector<Command> CommandList;
 
 class Client {
 public:
-    Client(PCSTR addr, PCSTR port, const std::string _commands_path);
+    Client(std::string addr, std::string port, const std::string _commands_path);
     void run();
 private:
-    void parse_commands();
-
     std::string commands_path;
     CommandList commands;
 
     ClientSocket conn;
-    char recvbuf[512];
-    int recvbuflen = 512;
 };
 
 

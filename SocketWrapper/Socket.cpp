@@ -29,7 +29,7 @@ std::string ConnectionPool::port() const {
 }
 
 
-ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
+ClientSocket::ClientSocket(std::string addr, std::string port) {
     General::initialize_winsock();
 
     // Attempt to connect to an address until one succeeds
@@ -54,11 +54,11 @@ ClientSocket::ClientSocket(PCSTR addr, PCSTR port) {
     }
 }
 
-ServerSocket::ServerSocket(int MAX_CONNECTIONS=10, PCSTR _port="") 
+ServerSocket::ServerSocket(int MAX_CONNECTIONS=10, std::string _port="") 
 : port(_port) {
 	General::initialize_winsock();
 
-	addr_ptr result = General::resolve(port, NULL);
+	addr_ptr result = General::resolve(port, "");
 
 	s = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 	if (s == INVALID_SOCKET) {

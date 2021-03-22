@@ -18,13 +18,14 @@
 
 #include "SocketWrapper/Socket.h"
 #include "SocketWrapper/MessageParser.h"
+#include "SocketWrapper/exceptions.h"
 #include "timestamp/timestamp.h"
 #include "Client.h"
 
 using namespace tinyxml2;
 
 
-Client::Client(PCSTR addr, PCSTR port, const std::string _commands_path)
+Client::Client(std::string addr, std::string port, const std::string _commands_path)
 : conn(addr, port), commands_path(_commands_path) {
 	tinyxml2::XMLDocument doc;
     doc.LoadFile("commands.xml");
@@ -47,10 +48,7 @@ void Client::run() {
         std::cout << Timestamp::timestamp() <<  " sending \"" << it->name << "\"" << std::endl;
         int iResult = send(conn.s, &data[0], data.size(), 0);
 		if (iResult == SOCKET_ERROR) {
-			std::cerr << "send failed with error: " << WSAGetLastError() << std::endl;
-			closesocket(conn.s);
-			WSACleanup();
-			return;
+            throw SocketError("send failed with error: " + WSAGetLastError());
 		}
 
         char buffer[512];

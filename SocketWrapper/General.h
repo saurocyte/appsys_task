@@ -2,6 +2,7 @@
 
 #include <WinSock2.h>
 #include <memory>
+#include <string>
 
 using addr_ptr = std::unique_ptr<addrinfo, void(__stdcall *)(addrinfo *)>;
 
@@ -10,6 +11,6 @@ struct addrinfo;
 class General {
 public:
 	static int initialize_winsock();
-	static addr_ptr resolve(PCSTR port, PCSTR addr);
+	static addr_ptr resolve(std::string port, std::string addr);
 };
 
